@@ -1,8 +1,9 @@
 'use strict';
 
-const Alexa = require('alexa-sdk');
-const constVal = require('./global-const');
-const dbConn = require('./dbConn');
+var Alexa = require('alexa-sdk');
+var constVal = require('./global-const');
+var dbConn = require('./dbConn');
+var message = require('./messageList');
 
 exports.handler = function(event, context, callback){
     var alexa = Alexa.handler(event, context);
@@ -15,14 +16,30 @@ var handlers = {
     	var userId = this.event.request.session.user.userId; 
     	dbConn.getUserInfo(userId, function(error, UserStatus) {
     		switch (UserStatus) {
-    			case constVal.UserStatus.USERIDMISSING
-    			case constVal.UserStatus.BABYNAMEMISSING
-    			case constVal.UserStatus.BIRTHDAYMISSING
-    			case constVal.UserStatus.LOCATIONMISSING
-    			case constVal.UserStatus.COMPLETED
+    			case constVal.UserInfoStatus.USERIDMISSING:
+    				dbConn.insertUserId(UserId, function (error) {
+    					if (error) {
+    						this.emit(':tell', message.error.errorMessage);		
+    					} else {
+    						this.emit(':ask', message.message.askBabyName);		
+    					}    					
+    				});    				
+    				break;
+    			case constVal.UserInfoStatus.BABYNAMEMISSING:
+    				this.emit(':tell', 'Hello World!');
+    				break;
+    			case constVal.UserInfoStatus.BIRTHDAYMISSING:
+    				this.emit(':tell', 'Hello World!');
+    				break;
+    			case constVal.UserInfoStatus.LOCATIONMISSING:
+    				this.emit(':tell', 'Hello World!');
+    				break;
+    			case constVal.UserInfoStatus.COMPLETED:
+    				this.emit(':tell', 'Hello World!');
+    				break;
     		}
 		});
-		this.emit(':tell', 'Hello World!');
+		
 	},
     'LogFormula': function () {
         var name = this.event.request.intent.slots.name.value;
