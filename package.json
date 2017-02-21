@@ -1,0 +1,28 @@
+{
+  "name": "babytracker",
+  "version": "1.0.0",
+  "description": "Tracking baby behavior vis Alexa",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juper007/babytracker.git"
+  },
+  "keywords": [
+    "baby",
+    "tracker",
+    "alexa"
+  ],
+  "author": "Min Park",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/juper007/babytracker/issues"
+  },
+  "homepage": "https://github.com/juper007/babytracker#readme",
+  "dependencies": {
+    "alexa-sdk": "^1.0.7",
+    "mysql": "^2.13.0"
+  }
+}

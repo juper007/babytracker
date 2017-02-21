@@ -1,0 +1,30 @@
+{
+  "intents": [
+    {
+      "intents": "initIntent"      
+    }
+    {
+      "intent": "LogFormula",
+      "slots": [
+      	{
+      		"name": "name",
+      		"type": "AMAZON.US_FIRST_NAME"
+      	},
+      	{
+      		"name": "amount",
+      		"type": "AMAZON.NUMBER"
+      	},
+      	{
+      		"name": "unit",
+      		"type": "LIST_OF_UNITS"
+      	}      	
+      ]
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    }
+  ]
+}
