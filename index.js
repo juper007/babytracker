@@ -7,35 +7,37 @@ var message = require('./messageList');
 
 exports.handler = function(event, context, callback){
     var alexa = Alexa.handler(event, context);
+    alexa.appId = 'amzn1.ask.skill.65e04a45-0576-415e-961a-34921aa523e5';
     alexa.registerHandlers(handlers);
     alexa.execute();
 };
 
 var handlers = {
     'initIntent' : function () {
-    	var userId = this.event.request.session.user.userId; 
+    	var userId = this.event.session.user.userId;
+        var parent = this;
     	dbConn.getUserInfo(userId, function(error, UserStatus) {
     		switch (UserStatus) {
     			case constVal.UserInfoStatus.USERIDMISSING:
-    				dbConn.insertUserId(UserId, function (error) {
+    				dbConn.insertUserId(userId, function (error) {
     					if (error) {
-    						this.emit(':tell', message.error.errorMessage);		
+    						parent.emit(':tell', message.error.errorMessage);		
     					} else {
-    						this.emit(':ask', message.message.askBabyName);		
+    						parent.emit(':ask', message.message.askBabyName);		
     					}    					
     				});    				
     				break;
     			case constVal.UserInfoStatus.BABYNAMEMISSING:
-    				this.emit(':tell', 'Hello World!');
+    				parent.emit(':tell', 'Hello World!');
     				break;
     			case constVal.UserInfoStatus.BIRTHDAYMISSING:
-    				this.emit(':tell', 'Hello World!');
+    				parent.emit(':tell', 'Hello World!');
     				break;
     			case constVal.UserInfoStatus.LOCATIONMISSING:
-    				this.emit(':tell', 'Hello World!');
+    				parent.emit(':tell', 'Hello World!');
     				break;
     			case constVal.UserInfoStatus.COMPLETED:
-    				this.emit(':tell', 'Hello World!');
+    				parent.emit(':tell', 'Hello World!');
     				break;
     		}
 		});
