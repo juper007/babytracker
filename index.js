@@ -1,9 +1,12 @@
 'use strict';
 
 const Alexa = require('alexa-sdk');
+const format = require('string-template');
+
 const globalVal = require('./global-const');
 const dbConn = require('./dbConn');
 const message = require('./messageList');
+
 
 exports.handler = function(event, context, callback){
     const alexa = Alexa.handler(event, context);
@@ -22,27 +25,22 @@ const Handlers = {
                 parent.emit(':tell', message.error.errorMessage);       
             } else {
                 switch (UserStatus) {                        
-                    case globalVal.UserInfoStatus.USERIDMISSING:
-                        console.log('User Id Missing');
+                    case globalVal.UserInfoStatus.USERIDMISSING:                        
                         parent.emit('insertUserId');
                         break;
-                    case globalVal.UserInfoStatus.BABYNAMEMISSING:
-                        console.log('Baby Name Missing');
+                    case globalVal.UserInfoStatus.BABYNAMEMISSING:                        
                         parent.handler.state = globalVal.states.BABYNAMEMODE;
                         parent.emitWithState('askBabyNameIntent');
                         break;
-                    case globalVal.UserInfoStatus.BIRTHDAYMISSING:
-                        console.log('Birthday Missing');
+                    case globalVal.UserInfoStatus.BIRTHDAYMISSING:                        
                         parent.handler.state = globalVal.states.BIRTHDAYMODE;
                         parent.emitWithState('askBirthdayIntent');
                         break;
-                    case globalVal.UserInfoStatus.ZIPCODEMISSING:
-                        console.log('Zipcode Missing');
+                    case globalVal.UserInfoStatus.ZIPCODEMISSING:                        
                         parent.handler.state = globalVal.states.ZIPCODEMODE;
                         parent.emitWithState('askZipCodeIntent');
                         break;
-                    case globalVal.UserInfoStatus.COMPLETED:
-                        console.log('registry Complete');
+                    case globalVal.UserInfoStatus.COMPLETED:                        
                         parent.emit(':tell', message.message.registryComplete);
                         break;
                 }    
@@ -82,7 +80,7 @@ const babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE,
     'babyNameIntent' : function() {
         const name = this.event.request.intent.slots.name.value;        
         this.attributes['babyName'] = name;
-        this.emit(':ask', message.message.babyNameConfirm(name));
+        this.emit(':ask', format(message.message.babyNameConfirm, [name]));
     },
     'AMAZON.YesIntent' : function() {
         const name = this.attributes['babyName'];
@@ -112,13 +110,13 @@ const babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE,
 const BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE, {
     'askBirthdayIntent' : function() {
         const name = this.attributes['babyName'];
-        this.emit(':ask', message.message.askBirthday(name));       
+        this.emit(':ask', format(message.message.askBirthday, [name]));       
     },
     'birthdayIntent' : function() {
         const birthday = this.event.request.intent.slots.date.value;
         const name = this.attributes['babyName'];
         this.attributes['birthday'] = birthday;
-        this.emit(':ask', message.message.birthdayConfirm(name, birthday));
+        this.emit(':ask', format(message.message.birthdayConfirm,[name, birthday]));
     },
     'AMAZON.YesIntent' : function() {
         const name = this.attributes['babyName'];
@@ -153,7 +151,7 @@ const ZipCodeHandlers = Alexa.CreateStateHandler(globalVal.states.ZIPCODEMODE, {
     'zipcodeIntent' : function() {
         const zipcode = this.event.request.intent.slots.zipcode.value;                
         this.attributes['zipcode'] = zipcode;
-        this.emit(':ask', message.message.zipCodeConfirm(zipcode));
+        this.emit(':ask', format(message.message.zipCodeConfirm, [zipcode]));
     },
     'AMAZON.YesIntent' : function() {
         const userId = this.event.session.user.userId;
