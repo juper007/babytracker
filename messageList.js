@@ -8,7 +8,11 @@ exports.message = {
 	babyNameConfirm: template`Your baby\'s name is ${0}, correct?`,
 	askBirthday : template`When is ${0}\'s birthday?`,
 	birthdayConfirm: template`${0}\'s birthday is ${1}, correct?`,
-	askAgainBirthday: `Please tell ${0}\'s birthday.`
+	askAgainBirthday: `Please tell ${0}\'s birthday.`,
+	askZipCode: `What\'s your 5 digit zipcode?`,
+	zipCodeConfirm: template`Your zipcode is ${0}, correct?`,
+	askAgainZipcode: `Please tell your 5 digit zipcode`,
+	registryComplete: `You are all set.`
 }
 
 function template(strings, ...keys) {

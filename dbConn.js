@@ -39,3 +39,19 @@ exports.insertBabyName = function (name, userId, callback) {
 		callback(error);
 	});	
 };
+
+exports.insertBirthday = function (birthday, userId, callback) {
+	var connection = mysql.createConnection(option);
+	connection.connect();
+	connection.query('UPDATE UserInfo SET birthday = ?, UserStatus = 4 WHERE UserId = ?', [birthday, userId] , function(error, results, fields) {
+		callback(error);
+	});	
+};
+
+exports.insertZipcode = function (zipcode, userId, callback) {
+	var connection = mysql.createConnection(option);
+	connection.connect();
+	connection.query('UPDATE UserInfo SET Zipcode = ?, UserStatus = 0 WHERE UserId = ?', [zipcode, userId] , function(error, results, fields) {
+		callback(error);
+	});	
+};

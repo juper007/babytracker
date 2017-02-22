@@ -23,16 +23,19 @@ var Handlers = {
                     parent.emit('insertUserId');
     				break;
     			case globalVal.UserInfoStatus.BABYNAMEMISSING:
-    				parent.emit(':tell', 'Hello World!');
+    				parent.handler.state = globalVal.states.BABYNAMEMODE;
+                    parent.emitWithState('askBabyNameIntent');
     				break;
     			case globalVal.UserInfoStatus.BIRTHDAYMISSING:
-    				parent.emit(':tell', 'Hello World!');
+    				parent.handler.state = globalVal.states.BIRTHDAYMODE;
+                    parent.emitWithState('askBirthdayIntent');
     				break;
     			case globalVal.UserInfoStatus.ZIPCODEMISSING:
-    				parent.emit(':tell', 'Hello World!');
+    				parent.handler.state = globalVal.states.ZIPCODEMODE;
+                    parent.emitWithState('askZipCodeIntent');
     				break;
     			case globalVal.UserInfoStatus.COMPLETED:
-    				parent.emit(':tell', 'Hello World!');
+    				parent.emit(':tell', message.message.registryComplete);
     				break;
     		}
 		});
@@ -121,5 +124,35 @@ var BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE, {
     },
     'Unhandled': function() {        
         this.emit(':ask', message.message.askAgainBirthday);
+    }   
+});
+
+
+var ZipCodeHandlers = Alexa.CreateStateHandler(globalVal.states.ZIPCODEMODE, {
+    'askZipCodeIntent' : function() {        
+        this.emit(':ask', message.message.askZipCode);       
+    },
+    'zipcodeIntent' : function() {
+        var zipcode = this.event.request.intent.slots.zipcode.value;                
+        this.attributes['zipcode'] = zipcode;
+        this.emit(':ask', message.message.zipCodeConfirm(zipcode));
+    },
+    'AMAZON.YesIntent' : function() {
+        var userId = this.event.session.user.userId;
+        var zipcode = this.attributes['zipcode'];
+        var parent = this;
+        dbConn.insertZipcode(zipcode, userId, function (error) {
+            if (error) {
+                parent.emit(':tell', message.error.errorMessage);       
+            } else {                
+                parent.emit(':tell', message.message.registryComplete);       
+            }                       
+        });
+    },
+    'AMAZON.NoIntent' : function() {
+        this.emit('Unhandled');
+    },
+    'Unhandled': function() {        
+        this.emit(':ask', message.message.askAgainZipcode);
     }   
 });
