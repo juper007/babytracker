@@ -6,7 +6,9 @@ exports.message = {
 	askBabyName : `What is your baby\'s name?`,
 	askAgainBabyName : `Please tell your baby\'s name.`,
 	babyNameConfirm: template`Your baby\'s name is ${0}, correct?`,
-	askBirthday : `When is ${0}\'s birthday?`
+	askBirthday : template`When is ${0}\'s birthday?`,
+	birthdayConfirm: template`${0}\'s birthday is ${1}, correct?`,
+	askAgainBirthday: `Please tell ${0}\'s birthday.`
 }
 
 function template(strings, ...keys) {

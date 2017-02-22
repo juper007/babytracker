@@ -8,12 +8,12 @@ var message = require('./messageList');
 exports.handler = function(event, context, callback){
     var alexa = Alexa.handler(event, context);
     alexa.appId = 'amzn1.ask.skill.65e04a45-0576-415e-961a-34921aa523e5';
-    alexa.registerHandlers(RegistryHandlers, TrackingHandlers);
+    alexa.registerHandlers(Handlers, babyNameHandlers);
     alexa.execute();
 };
 
 
-var RegistryHandlers = {
+var Handlers = {
     'initIntent' : function () {
     	var userId = this.event.session.user.userId;
         var parent = this;
@@ -28,7 +28,7 @@ var RegistryHandlers = {
     			case globalVal.UserInfoStatus.BIRTHDAYMISSING:
     				parent.emit(':tell', 'Hello World!');
     				break;
-    			case globalVal.UserInfoStatus.LOCATIONMISSING:
+    			case globalVal.UserInfoStatus.ZIPCODEMISSING:
     				parent.emit(':tell', 'Hello World!');
     				break;
     			case globalVal.UserInfoStatus.COMPLETED:
@@ -76,6 +76,37 @@ var babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE, {
             } else {
                 parent.handler.state = globalVal.states.BIRTHDAYMODE;
                 parent.emit(':ask', message.message.askBirthday(name));       
+            }                       
+        });
+    },
+    'AMAZON.NoIntent' : function() {
+        this.emit('Unhandled');
+    },
+    'Unhandled': function() {        
+        this.emit(':ask', message.message.askAgainBabyName);
+    }   
+});
+
+
+var BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE, {
+    'birthdayIntent' : function() {
+        var birthday = new Date(this.event.request.intent.slots.date.value);
+        var name = this.attributes['babyName'];
+        this.attributes['birthday'] = birthday;
+        this.emit(':ask', message.message.birthdayConfirm(name, 
+            glovalVal.month[birthday.getUTCMonth()], birthday.getUTCDay(), birthday.getUTCFullYear()));
+    },
+    'AMAZON.YesIntent' : function() {
+        var name = this.attributes['babyName'];
+        var birthday = this.attributes['birthday'];
+        var userId = this.event.session.user.userId;
+        var parent = this;
+        dbConn.insertBirthday(birthday, userId, function (error) {
+            if (error) {
+                parent.emit(':tell', message.error.errorMessage);       
+            } else {
+                parent.handler.state = globalVal.states.LOCATIONMODE;
+                parent.emit(':ask', message.message.askLocation);       
             }                       
         });
     },
