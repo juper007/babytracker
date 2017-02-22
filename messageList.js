@@ -1,7 +1,21 @@
 exports.error = {	
-	errorMessage : `Sorry, I can\'t complete the order now. Please try later again.`
+	errorMessage : "Sorry, I can\'t complete the order now. Please try later again."
 }
 
+exports.message = {
+	askBabyName : "What is your baby\'s name?",
+	askAgainBabyName : "Please tell your baby\'s name.",
+	babyNameConfirm: "Your baby\'s name is, correct?",
+	askBirthday : "When is birthday?",
+	birthdayConfirm: "birthday is , correct?",
+	askAgainBirthday: "Please tell birthday.",
+	askZipCode: "What\'s your 5 digit zipcode?",
+	zipCodeConfirm: "Your zipcode is, correct?",
+	askAgainZipcode: "Please tell your 5 digit zipcode",
+	registryComplete: "You are all set."
+}
+
+/*
 exports.message = {
 	askBabyName : `What is your baby\'s name?`,
 	askAgainBabyName : `Please tell your baby\'s name.`,
@@ -15,6 +29,7 @@ exports.message = {
 	registryComplete: `You are all set.`
 }
 
+
 function template(strings, ...keys) {
   return (function(...values) {
     var dict = values[values.length - 1] || {};
@@ -26,3 +41,4 @@ function template(strings, ...keys) {
     return result.join('');
   });
 }
+*/

@@ -1,47 +1,56 @@
 'use strict';
 
-var Alexa = require('alexa-sdk');
-var globalVal = require('./global-const');
-var dbConn = require('./dbConn');
-var message = require('./messageList');
+const Alexa = require('alexa-sdk');
+const globalVal = require('./global-const');
+const dbConn = require('./dbConn');
+const message = require('./messageList');
 
 exports.handler = function(event, context, callback){
-    var alexa = Alexa.handler(event, context);
-    alexa.appId = 'amzn1.ask.skill.65e04a45-0576-415e-961a-34921aa523e5';
-    alexa.registerHandlers(Handlers, babyNameHandlers);
-    alexa.execute();
+    const alexa = Alexa.handler(event, context);
+    alexa.appId = 'amzn1.ask.skill.65e04a45-0576-415e-961a-34921aa523e5';    
+    //alexa.dynamoDBTableName = 'BabyTracker';    
+    alexa.registerHandlers(Handlers, babyNameHandlers, BirthdayHandlers, ZipCodeHandlers);    
+    alexa.execute();    
 };
 
-
-var Handlers = {
-    'initIntent' : function () {
-    	var userId = this.event.session.user.userId;
+const Handlers = {
+    'initIntent' : function () {        
+    	const userId = this.event.session.user.userId;
         var parent = this;
-    	dbConn.getUserInfo(userId, function(error, UserStatus) {
-    		switch (UserStatus) {
-    			case globalVal.UserInfoStatus.USERIDMISSING:
-                    parent.emit('insertUserId');
-    				break;
-    			case globalVal.UserInfoStatus.BABYNAMEMISSING:
-    				parent.handler.state = globalVal.states.BABYNAMEMODE;
-                    parent.emitWithState('askBabyNameIntent');
-    				break;
-    			case globalVal.UserInfoStatus.BIRTHDAYMISSING:
-    				parent.handler.state = globalVal.states.BIRTHDAYMODE;
-                    parent.emitWithState('askBirthdayIntent');
-    				break;
-    			case globalVal.UserInfoStatus.ZIPCODEMISSING:
-    				parent.handler.state = globalVal.states.ZIPCODEMODE;
-                    parent.emitWithState('askZipCodeIntent');
-    				break;
-    			case globalVal.UserInfoStatus.COMPLETED:
-    				parent.emit(':tell', message.message.registryComplete);
-    				break;
-    		}
+    	dbConn.getUserInfo(userId, function(error, UserStatus) {            
+            if (error) {
+                parent.emit(':tell', message.error.errorMessage);       
+            } else {
+                switch (UserStatus) {                        
+                    case globalVal.UserInfoStatus.USERIDMISSING:
+                        console.log('User Id Missing');
+                        parent.emit('insertUserId');
+                        break;
+                    case globalVal.UserInfoStatus.BABYNAMEMISSING:
+                        console.log('Baby Name Missing');
+                        parent.handler.state = globalVal.states.BABYNAMEMODE;
+                        parent.emitWithState('askBabyNameIntent');
+                        break;
+                    case globalVal.UserInfoStatus.BIRTHDAYMISSING:
+                        console.log('Birthday Missing');
+                        parent.handler.state = globalVal.states.BIRTHDAYMODE;
+                        parent.emitWithState('askBirthdayIntent');
+                        break;
+                    case globalVal.UserInfoStatus.ZIPCODEMISSING:
+                        console.log('Zipcode Missing');
+                        parent.handler.state = globalVal.states.ZIPCODEMODE;
+                        parent.emitWithState('askZipCodeIntent');
+                        break;
+                    case globalVal.UserInfoStatus.COMPLETED:
+                        console.log('registry Complete');
+                        parent.emit(':tell', message.message.registryComplete);
+                        break;
+                }    
+            }
 		});
 	},
     'insertUserId' : function() {
-        var userId = this.event.session.user.userId;
+        const userId = this.event.session.user.userId;
         var parent = this;
         dbConn.insertUserId(userId, function (error) {
             if (error) {
@@ -53,28 +62,31 @@ var Handlers = {
         });                 
     },
     'LogFormula': function () {
-        var name = this.event.request.intent.slots.name.value;
-        var amount = parseInt(this.event.request.intent.slots.amount.value);
-        var unit = this.event.request.intent.slots.unit.value;
+        const name = this.event.request.intent.slots.name.value;
+        const amount = parseInt(this.event.request.intent.slots.amount.value);
+        const unit = this.event.request.intent.slots.unit.value;
         
-        var outputString = "Okay, I logged " + name + " ate " + amount + " " + unit + " of formula.";
+        const outputString = "Okay, I logged " + name + " ate " + amount + " " + unit + " of formula.";
         
         this.emit(':tell', outputString);
+    },
+    'SessionEndedRequest': function () {
+        console.log('session ended!');        
     }
 };
 
-var babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE, {
+const babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE, {
     'askBabyNameIntent' : function() {
         this.emit(':ask', message.message.askBabyName);
     },
     'babyNameIntent' : function() {
-        var name = this.event.request.intent.slots.name.value;        
+        const name = this.event.request.intent.slots.name.value;        
         this.attributes['babyName'] = name;
         this.emit(':ask', message.message.babyNameConfirm(name));
     },
     'AMAZON.YesIntent' : function() {
-        var name = this.attributes['babyName'];
-        var userId = this.event.session.user.userId;
+        const name = this.attributes['babyName'];
+        const userId = this.event.session.user.userId;
         var parent = this;
         dbConn.insertBabyName(name, userId, function (error) {
             if (error) {
@@ -90,32 +102,35 @@ var babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE, {
     },
     'Unhandled': function() {        
         this.emit(':ask', message.message.askAgainBabyName);
-    }   
+    },
+    'SessionEndedRequest': function () {
+        console.log('session ended!');        
+    }
 });
 
 
-var BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE, {
+const BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE, {
     'askBirthdayIntent' : function() {
-        var name = this.attributes['babyName'];
+        const name = this.attributes['babyName'];
         this.emit(':ask', message.message.askBirthday(name));       
     },
     'birthdayIntent' : function() {
-        var birthday = this.event.request.intent.slots.date.value;
-        var name = this.attributes['babyName'];
+        const birthday = this.event.request.intent.slots.date.value;
+        const name = this.attributes['babyName'];
         this.attributes['birthday'] = birthday;
         this.emit(':ask', message.message.birthdayConfirm(name, birthday));
     },
     'AMAZON.YesIntent' : function() {
-        var name = this.attributes['babyName'];
-        var birthday = this.attributes['birthday'];
-        var userId = this.event.session.user.userId;
+        const name = this.attributes['babyName'];
+        const birthday = this.attributes['birthday'];
+        const userId = this.event.session.user.userId;
         var parent = this;
         dbConn.insertBirthday(birthday, userId, function (error) {
             if (error) {
                 parent.emit(':tell', message.error.errorMessage);       
             } else {
                 parent.handler.state = globalVal.states.ZIPCODEMODE;
-                parent.emit(':ask', message.message.askZipCode);       
+                parent.emitWith(':ask', message.message.askZipCode);       
             }                       
         });
     },
@@ -124,22 +139,25 @@ var BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE, {
     },
     'Unhandled': function() {        
         this.emit(':ask', message.message.askAgainBirthday);
-    }   
+    },
+    'SessionEndedRequest': function () {
+        console.log('session ended!');        
+    }
 });
 
 
-var ZipCodeHandlers = Alexa.CreateStateHandler(globalVal.states.ZIPCODEMODE, {
+const ZipCodeHandlers = Alexa.CreateStateHandler(globalVal.states.ZIPCODEMODE, {
     'askZipCodeIntent' : function() {        
         this.emit(':ask', message.message.askZipCode);       
     },
     'zipcodeIntent' : function() {
-        var zipcode = this.event.request.intent.slots.zipcode.value;                
+        const zipcode = this.event.request.intent.slots.zipcode.value;                
         this.attributes['zipcode'] = zipcode;
         this.emit(':ask', message.message.zipCodeConfirm(zipcode));
     },
     'AMAZON.YesIntent' : function() {
-        var userId = this.event.session.user.userId;
-        var zipcode = this.attributes['zipcode'];
+        const userId = this.event.session.user.userId;
+        const zipcode = this.attributes['zipcode'];
         var parent = this;
         dbConn.insertZipcode(zipcode, userId, function (error) {
             if (error) {
@@ -154,5 +172,8 @@ var ZipCodeHandlers = Alexa.CreateStateHandler(globalVal.states.ZIPCODEMODE, {
     },
     'Unhandled': function() {        
         this.emit(':ask', message.message.askAgainZipcode);
-    }   
+    },
+    'SessionEndedRequest': function () {
+        console.log('session ended!');        
+    }
 });
