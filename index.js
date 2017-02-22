@@ -45,7 +45,7 @@ var Handlers = {
                 parent.emit(':tell', message.error.errorMessage);       
             } else {
                 parent.handler.state = globalVal.states.BABYNAMEMODE;
-                parent.emit(':ask', message.message.askBabyName);       
+                parent.emitWithState('askBabyNameIntent');
             }                       
         });                 
     },
@@ -61,6 +61,9 @@ var Handlers = {
 };
 
 var babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE, {
+    'askBabyNameIntent' : function() {
+        this.emit(':ask', message.message.askBabyName);
+    },
     'babyNameIntent' : function() {
         var name = this.event.request.intent.slots.name.value;        
         this.attributes['babyName'] = name;
@@ -75,7 +78,7 @@ var babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE, {
                 parent.emit(':tell', message.error.errorMessage);       
             } else {
                 parent.handler.state = globalVal.states.BIRTHDAYMODE;
-                parent.emit(':ask', message.message.askBirthday(name));       
+                parent.emitWithState('askBirthdayIntent');
             }                       
         });
     },
@@ -89,12 +92,15 @@ var babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE, {
 
 
 var BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE, {
+    'askBirthdayIntent' : function() {
+        var name = this.attributes['babyName'];
+        this.emit(':ask', message.message.askBirthday(name));       
+    },
     'birthdayIntent' : function() {
-        var birthday = new Date(this.event.request.intent.slots.date.value);
+        var birthday = this.event.request.intent.slots.date.value;
         var name = this.attributes['babyName'];
         this.attributes['birthday'] = birthday;
-        this.emit(':ask', message.message.birthdayConfirm(name, 
-            glovalVal.month[birthday.getUTCMonth()], birthday.getUTCDay(), birthday.getUTCFullYear()));
+        this.emit(':ask', message.message.birthdayConfirm(name, birthday));
     },
     'AMAZON.YesIntent' : function() {
         var name = this.attributes['babyName'];
@@ -105,8 +111,8 @@ var BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE, {
             if (error) {
                 parent.emit(':tell', message.error.errorMessage);       
             } else {
-                parent.handler.state = globalVal.states.LOCATIONMODE;
-                parent.emit(':ask', message.message.askLocation);       
+                parent.handler.state = globalVal.states.ZIPCODEMODE;
+                parent.emit(':ask', message.message.askZipCode);       
             }                       
         });
     },
@@ -114,6 +120,6 @@ var BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE, {
         this.emit('Unhandled');
     },
     'Unhandled': function() {        
-        this.emit(':ask', message.message.askAgainBabyName);
+        this.emit(':ask', message.message.askAgainBirthday);
     }   
 });
