@@ -5,3 +5,9 @@ exports.UserInfoStatus = {
 	LOCATIONMISSING : 4,
 	COMPLETED : 0
 };
+
+exports.states = {
+    BABYNAMEMODE : '_BABYNAMEMODE',
+    BIRTHDAYMODE : '_BIRTHDAYMODE',
+    LCATIONMODE : '_LOCATIONMODE'
+};

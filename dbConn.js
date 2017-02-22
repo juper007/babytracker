@@ -31,3 +31,11 @@ exports.insertUserId = function (userId, callback) {
 		callback(error);
 	});	
 };
+
+exports.insertBabyName = function (name, userId, callback) {
+	var connection = mysql.createConnection(option);
+	connection.connect();
+	connection.query('UPDATE UserInfo SET BabyName = ?, UserStatus = 3 WHERE UserId = ?', [name, userId] , function(error, results, fields) {
+		callback(error);
+	});	
+};
