@@ -1,0 +1,5 @@
+initIntent start to log
+babyNameIntent {name}
+birthdayIntent {date}
+zipcodeIntent {zipcode}
+LogFormula {name} ate {amount} {unit} of formula now.

@@ -1,0 +1,63 @@
+{
+  "intents": [
+    {
+      "intent": "initIntent"      
+    },
+    {
+      "intent": "babyNameIntent",
+      "slots": [
+        {
+          "name": "name",
+          "type": "AMAZON.US_FIRST_NAME"
+        }
+      ]
+    },
+    {
+      "intent": "birthdayIntent",
+      "slots": [
+        {
+          "name": "date",
+          "type": "AMAZON.DATE"
+        }
+      ]
+    },
+    {
+      "intent": "zipcodeIntent",
+      "slots": [
+        {
+          "name": "zipcode",
+          "type": "AMAZON.NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "LogFormula",
+      "slots": [
+      	{
+      		"name": "name",
+      		"type": "AMAZON.US_FIRST_NAME"
+      	},
+      	{
+      		"name": "amount",
+      		"type": "AMAZON.NUMBER"
+      	},
+      	{
+      		"name": "unit",
+      		"type": "LIST_OF_UNITS"
+      	}      	
+      ]
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    },
+    {
+      "intent": "AMAZON.YesIntent"
+    },
+    {
+      "intent": "AMAZON.NoIntent"
+    }
+  ]
+}
