@@ -17,27 +17,34 @@ exports.handler = function(event, context, callback){
 };
 
 const Handlers = {
-    'initIntent' : function () {        
+    'initIntent' : function () {
+        console.log("initIntent fired");
     	const userId = this.event.session.user.userId;
         var parent = this;
-    	dbConn.getUserInfo(userId, function(error, UserStatus) {            
+    	dbConn.getUserInfo(userId, function(error, userInfo) {
             if (error) {
+                console.log("get User Info error.");
                 parent.emit(':tell', message.error.errorMessage);       
             } else {
-                switch (UserStatus) {                        
+                parent.attributes['babyName'] = userInfo.BabyName;                
+                switch (userInfo.UserStatus) {                        
                     case globalVal.UserInfoStatus.USERIDMISSING:                        
+                        console.log("User Id Missing.");
                         parent.emit('insertUserId');
                         break;
                     case globalVal.UserInfoStatus.BABYNAMEMISSING:                        
                         parent.handler.state = globalVal.states.BABYNAMEMODE;
+                        console.log("Chage Baby Name Mode");
                         parent.emitWithState('askBabyNameIntent');
                         break;
                     case globalVal.UserInfoStatus.BIRTHDAYMISSING:                        
                         parent.handler.state = globalVal.states.BIRTHDAYMODE;
+                        console.log("Chage Birthday Mode");
                         parent.emitWithState('askBirthdayIntent');
                         break;
                     case globalVal.UserInfoStatus.ZIPCODEMISSING:                        
                         parent.handler.state = globalVal.states.ZIPCODEMODE;
+                        console.log("Chage Zipcode Mode");
                         parent.emitWithState('askZipCodeIntent');
                         break;
                     case globalVal.UserInfoStatus.COMPLETED:                        
@@ -48,6 +55,7 @@ const Handlers = {
 		});
 	},
     'insertUserId' : function() {
+        console.log("insertUserId intent fired.");
         const userId = this.event.session.user.userId;
         var parent = this;
         dbConn.insertUserId(userId, function (error) {
@@ -68,6 +76,9 @@ const Handlers = {
         
         this.emit(':tell', outputString);
     },
+    'Unhandled': function() {        
+        this.emit(':ask', message.message.errorMessage);
+    },
     'SessionEndedRequest': function () {
         console.log('session ended!');        
     }
@@ -75,6 +86,7 @@ const Handlers = {
 
 const babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE, {
     'askBabyNameIntent' : function() {
+        console.log("askBabyNameIntent fired");
         this.emit(':ask', message.message.askBabyName);
     },
     'babyNameIntent' : function() {
@@ -95,13 +107,14 @@ const babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE,
             }                       
         });
     },
-    'AMAZON.NoIntent' : function() {
-        this.emit('Unhandled');
+    'AMAZON.NoIntent' : function() {        
+        this.emit(':ask', message.message.askAgainBabyName);
     },
     'Unhandled': function() {        
         this.emit(':ask', message.message.askAgainBabyName);
     },
     'SessionEndedRequest': function () {
+        this.handler.state = '';
         console.log('session ended!');        
     }
 });
@@ -128,17 +141,20 @@ const BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE,
                 parent.emit(':tell', message.error.errorMessage);       
             } else {
                 parent.handler.state = globalVal.states.ZIPCODEMODE;
-                parent.emitWith(':ask', message.message.askZipCode);       
+                parent.emit(':ask', message.message.askZipCode);       
             }                       
         });
     },
     'AMAZON.NoIntent' : function() {
-        this.emit('Unhandled');
+        const name = this.attributes['babyName'];
+        this.emit(':ask', format(message.message.askAgainBirthday, [name]));
     },
-    'Unhandled': function() {        
-        this.emit(':ask', message.message.askAgainBirthday);
+    'Unhandled': function() {
+        const name = this.attributes['babyName'];
+        this.emit(':ask', format(message.message.askAgainBirthday, [name]));
     },
     'SessionEndedRequest': function () {
+        this.handler.state = '';
         console.log('session ended!');        
     }
 });
@@ -160,13 +176,14 @@ const ZipCodeHandlers = Alexa.CreateStateHandler(globalVal.states.ZIPCODEMODE, {
         dbConn.insertZipcode(zipcode, userId, function (error) {
             if (error) {
                 parent.emit(':tell', message.error.errorMessage);       
-            } else {                
+            } else {
+                parent.handler.state = '';
                 parent.emit(':tell', message.message.registryComplete);       
             }                       
         });
     },
     'AMAZON.NoIntent' : function() {
-        this.emit('Unhandled');
+        this.emit(':ask', message.message.askAgainZipcode);        
     },
     'Unhandled': function() {        
         this.emit(':ask', message.message.askAgainZipcode);

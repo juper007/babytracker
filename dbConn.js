@@ -11,17 +11,23 @@ var option = {
 exports.getUserInfo = function (userId, callback) {	
 	var connection = mysql.createConnection(option);
 	connection.connect();
-	connection.query('SELECT UserStatus FROM UserInfo Where UserID = ?', [userId] , function (error, results, fields) {		
+	connection.query('SELECT BabyName, Birthday, Zipcode, UserStatus FROM UserInfo Where UserID = ?', [userId] , function (error, results, fields) {		
+		console.log(results);
 		connection.end();
-		var userStatus;
+		var userInfo = { 
+			BabyName : '',
+			UserStatus : '',
+			birthday : '',
+			Zipcode : ''
+		};
 		if (!error)	{
 			if (results.length == 0) {
-				userStatus = constVal.UserInfoStatus.USERIDMISSING;
+				userInfo.UserStatus = constVal.UserInfoStatus.USERIDMISSING;
 			} else {
-				userStatus = results[0].UserStatus;
+				userInfo = results[0];
 			}	
 		}
-		callback(error, userStatus);
+		callback(error, userInfo);
 	});
 };
 
@@ -55,7 +61,12 @@ exports.insertBirthday = function (birthday, userId, callback) {
 exports.insertZipcode = function (zipcode, userId, callback) {
 	var connection = mysql.createConnection(option);
 	connection.connect();
-	connection.query('UPDATE UserInfo SET Zipcode = ?, UserStatus = 0 WHERE UserId = ?', [zipcode, userId], function(error, results, fields) {
+
+	connection.query('UPDATE UserInfo SET Zipcode = ?, UserStatus = 0 WHERE UserId = ?;' +
+		'UPDATE UserInfo as a ' +
+		'LEFT JOIN Location as b on a.Zipcode = b.Zipcode ' +
+    	'LEFT JOIN TimeZone as c on b.TimeZone = c.TimeZone ' +
+		'set a.CityName = b.CityName, a.State = b.State, a.TimeZone_Id = c.TimeZone_Id;', [zipcode, userId], function(error, results, fields) {
 		connection.end();
 		callback(error);
 	});	
