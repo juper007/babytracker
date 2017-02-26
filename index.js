@@ -2,6 +2,7 @@
 
 const Alexa = require('alexa-sdk');
 const format = require('string-template');
+const dateFormat = require('dateformat');
 
 const globalVal = require('./global-const');
 const dbConn = require('./dbConn');
@@ -21,13 +22,13 @@ const Handlers = {
         console.log("initIntent fired");
     	const userId = this.event.session.user.userId;
         var parent = this;
-    	dbConn.getUserInfo(userId, function(error, userInfo) {
+    	dbConn.getUserInfo(userId, function(error, babyInfo) {
             if (error) {
                 console.log("get User Info error.");
                 parent.emit(':tell', message.error.errorMessage);       
             } else {
-                parent.attributes['babyName'] = userInfo.BabyName;                
-                switch (userInfo.UserStatus) {                        
+                parent.attributes['babyName'] = babyInfo.BabyName;                
+                switch (babyInfo.UserStatus) {                        
                     case globalVal.UserInfoStatus.USERIDMISSING:                        
                         console.log("User Id Missing.");
                         parent.emit('insertUserId');
@@ -48,7 +49,15 @@ const Handlers = {
                         parent.emitWithState('askZipCodeIntent');
                         break;
                     case globalVal.UserInfoStatus.COMPLETED:                        
-                        parent.emit(':tell', message.message.registryComplete);
+                        const cardTitle = 'Completed baby register.';
+                        const cardContent = 'Thank you for using Baby Traker. You completed to regiter your baby, ' + babyInfo.BabyName + '. \n\n'
+                            + 'Member ID: ' + babyInfo.UserInfo_Key + '\n'
+                            + 'Baby Name: ' + babyInfo.BabyName + '\n'
+                            + 'Birthday : ' + dateFormat(babyInfo.Birthday, 'mmmm d, yyyy') + '\n'
+                            + 'Location : ' + babyInfo.CityName + ', ' + babyInfo.State + ' ' + babyInfo.Zipcode + '\n\n'
+                            + 'If you the information is not correct, please send e-mail to me with correct information along with your member ID.';
+
+                        parent.emit(':tellWithCard', message.message.registryComplete,cardTitle, cardContent);
                         break;
                 }    
             }
@@ -172,13 +181,24 @@ const ZipCodeHandlers = Alexa.CreateStateHandler(globalVal.states.ZIPCODEMODE, {
     'AMAZON.YesIntent' : function() {
         const userId = this.event.session.user.userId;
         const zipcode = this.attributes['zipcode'];
+        const babyName = this.attributes['babyName'];
+        const birthday = this.attributes['birthday'];
         var parent = this;
-        dbConn.insertZipcode(zipcode, userId, function (error) {
+        dbConn.insertZipcode(zipcode, userId, function (error, babyInfo) {
             if (error) {
                 parent.emit(':tell', message.error.errorMessage);       
             } else {
                 parent.handler.state = '';
-                parent.emit(':tell', message.message.registryComplete);       
+
+                const cardTitle = 'Completed baby register.';
+                const cardContent = 'Thank you for using Baby Traker. You completed to regiter your baby, ' + BabyName + '. \n\n'
+                    + 'Member ID: ' + babyInfo.UserInfo_Key + '\n'
+                    + 'Baby Name: ' + babyInfo.BabyName + '\n'
+                    + 'Birthday : ' + dateFormat(babyInfo.Birthday, 'mmmm d, yyyy') + '\n'
+                    + 'Location : ' + babyInfo.CityName + ', ' + babyInfo.State + ' ' + babyInfo.Zipcode + '\n\n'
+                    + 'If you the information is not correct, please send e-mail correct information along with your member ID.';
+
+                parent.emit(':tellWithCard', message.message.registryComplete,cardTitle, cardContent);
             }                       
         });
     },

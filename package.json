@@ -23,6 +23,7 @@
   "homepage": "https://github.com/juper007/babytracker#readme",
   "dependencies": {
     "alexa-sdk": "^1.0.7",
+    "dateformat": "^2.0.0",
     "mysql": "^2.13.0",
     "string-template": "^1.0.0"
   }

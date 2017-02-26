@@ -12,8 +12,7 @@ var option = {
 exports.getUserInfo = function (userId, callback) {	
 	var connection = mysql.createConnection(option);
 	connection.connect();
-	let query = format('SELECT BabyName, Birthday, Zipcode, UserStatus FROM UserInfo Where UserID = "{0}"', userId);
-	console.log(query);
+	let query = format('SELECT * FROM UserInfo Where UserID = "{0}"', userId);	
 	console.log(query);
 	connection.query(query, function (error, results, fields) {		
 		console.log(results);
@@ -49,6 +48,7 @@ exports.insertUserId = function (userId, callback) {
 exports.insertBabyName = function (name, userId, callback) {
 	var connection = mysql.createConnection(option);
 	connection.connect();
+	name = name[0].toUpperCase() + name.substring(1).toLowerCase();
 	let query = format('UPDATE UserInfo SET BabyName = "{0}", UserStatus = 3 WHERE UserId = "{1}"', name, userId);
 	console.log(query);
 	connection.query(query, function(error, results, fields) {
@@ -72,9 +72,10 @@ exports.insertZipcode = function (zipcode, userId, callback) {
 	var connection = mysql.createConnection(option);
 	connection.connect();
 	let query = format('UPDATE UserInfo as a LEFT JOIN Location as b on a.UserId = "{0}" and b.Zipcode = {1} LEFT JOIN TimeZone as c on b.TimeZone = c.TimeZone SET a.Zipcode = {1}, a.UserStatus = 0, a.CityName = b.CityName, a.State = b.State, a.TimeZone_Id = c.TimeZone_Id;', userId, zipcode);
+	query = foramt('{0};SELECT * FROM UserInfo WHERE UserId = {1}', query, userId);
 	console.log(query);
 	connection.query(query, function(error, results, fields) {
 		connection.end();
-		callback(error);
+		callback(error, results[0]);
 	});		
 };
