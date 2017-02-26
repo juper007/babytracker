@@ -1,5 +1,6 @@
 'use strict';
 var mysql = require('mysql');
+var format = require('string-template');
 var constVal = require('./global-const');
 var option = {
 	host : 'miniris.c788liamkeqr.us-east-1.rds.amazonaws.com',
@@ -11,7 +12,10 @@ var option = {
 exports.getUserInfo = function (userId, callback) {	
 	var connection = mysql.createConnection(option);
 	connection.connect();
-	connection.query('SELECT BabyName, Birthday, Zipcode, UserStatus FROM UserInfo Where UserID = ?', [userId] , function (error, results, fields) {		
+	let query = format('SELECT BabyName, Birthday, Zipcode, UserStatus FROM UserInfo Where UserID = "{0}"', userId);
+	console.log(query);
+	console.log(query);
+	connection.query(query, function (error, results, fields) {		
 		console.log(results);
 		connection.end();
 		var userInfo = { 
@@ -34,7 +38,9 @@ exports.getUserInfo = function (userId, callback) {
 exports.insertUserId = function (userId, callback) {
 	var connection = mysql.createConnection(option);
 	connection.connect();
-	connection.query('INSERT INTO UserInfo (UserId, UserStatus) VALUES (?, 2)', [userId], function(error, results, fields) {										
+	let query = format('INSERT INTO UserInfo (UserId, UserStatus) VALUES ("{0}", 2)', userId);
+	console.log(query);
+	connection.query(query, function(error, results, fields) {	
 		connection.end();
 		callback(error);
 	});	
@@ -43,7 +49,9 @@ exports.insertUserId = function (userId, callback) {
 exports.insertBabyName = function (name, userId, callback) {
 	var connection = mysql.createConnection(option);
 	connection.connect();
-	connection.query('UPDATE UserInfo SET BabyName = ?, UserStatus = 3 WHERE UserId = ?', [name, userId], function(error, results, fields) {
+	let query = format('UPDATE UserInfo SET BabyName = "{0}", UserStatus = 3 WHERE UserId = "{1}"', name, userId);
+	console.log(query);
+	connection.query(query, function(error, results, fields) {
 		connection.end();
 		callback(error);
 	});	
@@ -52,7 +60,9 @@ exports.insertBabyName = function (name, userId, callback) {
 exports.insertBirthday = function (birthday, userId, callback) {
 	var connection = mysql.createConnection(option);
 	connection.connect();
-	connection.query('UPDATE UserInfo SET birthday = ?, UserStatus = 4 WHERE UserId = ?', [birthday, userId], function(error, results, fields) {
+	let query = format('UPDATE UserInfo SET birthday = "{0}", UserStatus = 4 WHERE UserId = "{1}"', birthday, userId);
+	console.log(query);
+	connection.query(query, function(error, results, fields) {
 		connection.end();
 		callback(error);
 	});	
@@ -61,13 +71,9 @@ exports.insertBirthday = function (birthday, userId, callback) {
 exports.insertZipcode = function (zipcode, userId, callback) {
 	var connection = mysql.createConnection(option);
 	connection.connect();
-	
-	connection.query('UPDATE UserInfo SET Zipcode = ?, UserStatus = 0 WHERE UserId = "?";' +
-		'UPDATE UserInfo as a ' +
-		'LEFT JOIN Location as b on a.Zipcode = b.Zipcode ' +
-    	'LEFT JOIN TimeZone as c on b.TimeZone = c.TimeZone ' +
-		'SET a.CityName = b.CityName, a.State = b.State, a.TimeZone_Id = c.TimeZone_Id ' + 
-		'WHERE a.UserId = "?";', [zipcode, userId, userId], function(error, results, fields) {
+	let query = format('UPDATE UserInfo as a LEFT JOIN Location as b on a.UserId = "{0}" and b.Zipcode = {1} LEFT JOIN TimeZone as c on b.TimeZone = c.TimeZone SET a.Zipcode = {1}, a.UserStatus = 0, a.CityName = b.CityName, a.State = b.State, a.TimeZone_Id = c.TimeZone_Id;', userId, zipcode);
+	console.log(query);
+	connection.query(query, function(error, results, fields) {
 		connection.end();
 		callback(error);
 	});		
