@@ -11,8 +11,7 @@ const message = require('./messageList');
 
 exports.handler = function(event, context, callback){
     const alexa = Alexa.handler(event, context);
-    alexa.appId = 'amzn1.ask.skill.65e04a45-0576-415e-961a-34921aa523e5';    
-    //alexa.dynamoDBTableName = 'BabyTracker';    
+    alexa.appId = 'amzn1.ask.skill.65e04a45-0576-415e-961a-34921aa523e5';        
     alexa.registerHandlers(Handlers, babyNameHandlers, BirthdayHandlers, ZipCodeHandlers);    
     alexa.execute();    
 };
@@ -35,17 +34,17 @@ const Handlers = {
                         break;
                     case globalVal.UserInfoStatus.BABYNAMEMISSING:                        
                         parent.handler.state = globalVal.states.BABYNAMEMODE;
-                        console.log("Chage Baby Name Mode");
+                        console.log("Change Baby Name Mode");
                         parent.emitWithState('askBabyNameIntent');
                         break;
                     case globalVal.UserInfoStatus.BIRTHDAYMISSING:                        
                         parent.handler.state = globalVal.states.BIRTHDAYMODE;
-                        console.log("Chage Birthday Mode");
+                        console.log("Change Birthday Mode");
                         parent.emitWithState('askBirthdayIntent');
                         break;
                     case globalVal.UserInfoStatus.ZIPCODEMISSING:                        
                         parent.handler.state = globalVal.states.ZIPCODEMODE;
-                        console.log("Chage Zipcode Mode");
+                        console.log("Change Zipcode Mode");
                         parent.emitWithState('askZipCodeIntent');
                         break;
                     case globalVal.UserInfoStatus.COMPLETED:                        
@@ -77,21 +76,65 @@ const Handlers = {
         });                 
     },
     'LogFormula': function () {
+        const userId = this.event.session.user.userId;
         const name = this.event.request.intent.slots.name.value;
         const amount = parseInt(this.event.request.intent.slots.amount.value);
         const unit = this.event.request.intent.slots.unit.value;
-        
-        const outputString = "Okay, I logged " + name + " ate " + amount + " " + unit + " of formula.";
-        
-        this.emit(':tell', outputString);
+        let time = dateFormat(new Date(this.event.request.timestamp), 'yyyy-mm-dd hh:MM:ss');        
+        let parent = this;
+        dbConn.getUserInfo(userId, function(error, babyInfo) {            
+            dbConn.addFormula(babyInfo.UserInfo_Key, time, amount, unit, function(error) {
+                if (error) {
+                    parent.emit(':tell', message.error.errorMessage);       
+                } else {
+                    const outputString = "Okay, I logged " + name + " ate " + amount + " " + unit + " of formula.";
+                    parent.emit(':tell', outputString);
+                }
+            });
+        });
+    },
+    'LastFormula': function () {
+        const userId = this.event.session.user.userId;
+        const name = this.event.request.intent.slots.name.value;        
+        let currentTime = new Date(this.event.request.timestamp);
+        let parent = this;        
+        dbConn.getUserInfo(userId, function(error, babyInfo) {
+            dbConn.getLastFormula(babyInfo.UserInfo_Key, function(error, formulaInfo) {
+                if (error) {
+                        parent.emit(':tell', message.error.errorMessage);       
+                    } else {                                                                                  
+                        const timeDiff = Math.floor((currentTime - new Date(formulaInfo.TimeStamp)) / 1000);
+                        const durationDay = Math.floor(timeDiff / (24 * 60 * 60));
+                        const durationHour = Math.floor(timeDiff / (60 * 60));
+                        const durationMin = Math.floor(timeDiff / 60);
+
+                        let convertedTime = timeConvert(formulaInfo.TimeStamp, babyInfo.Offset);
+
+                        let timeDurationString = '';                        
+                        if (durationDay > 0) timeDurationString = timeDurationString + durationDay + ' days ';
+                        if (durationHour > 0) timeDurationString = timeDurationString + durationHour + ' hours ';
+                        timeDurationString = timeDurationString + durationMin + ' minutes ago';
+                        const outputString = format("The last time {0} ate formulas was {1}, about {2}.", name, convertedTime, timeDurationString);
+                        parent.emit(':tell', outputString);
+                    }
+            });
+        });
     },
     'Unhandled': function() {        
         this.emit(':ask', message.message.errorMessage);
     },
     'SessionEndedRequest': function () {
         console.log('session ended!');        
+    },
+    'AMAZON.CancelIntent': function() {
+        this.handler.state = '';
+        console.log('session Canceled!');
     }
 };
+
+function timeConvert(time, offset) {
+    return dateFormat(time.setHours(time.getHours() + offset), 'yyyy-mm-dd hh:MM:ss');
+}
 
 const babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE, {
     'askBabyNameIntent' : function() {
@@ -125,6 +168,10 @@ const babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE,
     'SessionEndedRequest': function () {
         this.handler.state = '';
         console.log('session ended!');        
+    },
+    'AMAZON.CancelIntent': function () {
+        this.handler.state = '';
+        console.log('session Canceled!');
     }
 });
 
@@ -165,6 +212,10 @@ const BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE,
     'SessionEndedRequest': function () {
         this.handler.state = '';
         console.log('session ended!');        
+    },
+    'AMAZON.CancelIntent': function () {
+        this.handler.state = '';
+        console.log('session Canceled!');
     }
 });
 
@@ -210,5 +261,9 @@ const ZipCodeHandlers = Alexa.CreateStateHandler(globalVal.states.ZIPCODEMODE, {
     },
     'SessionEndedRequest': function () {
         console.log('session ended!');        
+    },
+    'AMAZON.CancelIntent': function (){
+        this.handler.state = '';
+        console.log('session Canceled!');
     }
 });
