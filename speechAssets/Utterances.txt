@@ -2,4 +2,5 @@ initIntent start to log
 babyNameIntent {name}
 birthdayIntent {date}
 zipcodeIntent {zipcode}
-LogFormula {name} ate {amount} {unit} of formula now.
+LogFormula tell Baby Tracker, {name} ate {amount} {unit} of formula (now).
+LastFormula ask Baby Tracker, When did {name} ate formula last time

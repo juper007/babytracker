@@ -49,11 +49,12 @@
     },
     {
       "intent": "LastFormula",
-      "slots":
+      "slots": [
         {
           "name": "name",
           "type": "AMAZON.US_FIRST_NAME"
         }
+      ]
     },
     {
       "intent": "AMAZON.HelpIntent"

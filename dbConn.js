@@ -11,13 +11,12 @@ var option = {
 
 const DAY_LIGHT_SAVING = 0;
 
-exports.getUserInfo = function (userId, callback) {	
+exports.getUserInfo = function (userId, callback) {
 	var connection = mysql.createConnection(option);
 	connection.connect();
 	let query = format('SELECT UserInfo_Key, UserId, BabyName, Birthday, Zipcode, CityName, State, UserStatus, Offset FROM UserInfo AS a INNER JOIN TimeZone AS b ON a.TimeZone_Id = b.TimeZone_Id Where UserID = "{0}" and b.isDST = {1}', userId, DAY_LIGHT_SAVING);	
 	console.log(query);
-	connection.query(query, function (error, results, fields) {		
-		console.log(results);
+	connection.query(query, function (error, results, fields) {
 		connection.end();
 		var userInfo = { 
 			UserInfo_Key : 0, 
@@ -28,14 +27,14 @@ exports.getUserInfo = function (userId, callback) {
 			CityName: '', 
 			State: '', 
 			UserStatus: '', 
-			Offset: ''			
+			Offset: ''
 		};
 		if (!error)	{
 			if (results.length == 0) {
 				userInfo.UserStatus = constVal.UserInfoStatus.USERIDMISSING;
 			} else {
 				userInfo = results[0];
-			}	
+			}
 		}
 		callback(error, userInfo);
 	});
@@ -46,10 +45,10 @@ exports.insertUserId = function (userId, callback) {
 	connection.connect();
 	let query = format('INSERT INTO UserInfo (UserId, UserStatus) VALUES ("{0}", 2)', userId);
 	console.log(query);
-	connection.query(query, function(error, results, fields) {	
+	connection.query(query, function(error, results, fields) {
 		connection.end();
 		callback(error);
-	});	
+	});
 };
 
 exports.insertBabyName = function (name, userId, callback) {
@@ -87,24 +86,27 @@ exports.insertZipcode = function (zipcode, userId, callback) {
 	});	
 };
 
-exports.addFormula = function(UserInfo_Key, time, amount, unit, callback) {
+exports.addFormula = function(userId, time, amount, unit, callback) {
 	var connection = mysql.createConnection(option);
 	connection.connect();	
-	let query = format('INSERT INTO Formula(UserInfo_Key, TimeStamp, Amount, Unit) VALUES ( {0}, "{1}", {2}, "{3}" );', UserInfo_Key, time, amount, unit);
+	let query = format('INSERT INTO Formula(UserInfo_Key, TimeStamp, Amount, Unit) SELECT UserInfo_Key, {0} AS TimeStamp, {1} AS Amount, "{2}" AS Unit FROM UserInfo WHERE UserId = "{3}"', time, amount, unit, userId);
 	console.log(query);
 	connection.query(query, function(error, results, fields) {
 		connection.end();
-		callback(error);
+		console.log(results);
+		callback(error, results);
 	});		
 };
 
 exports.getLastFormula = function(userId, callback) {
 	var connection = mysql.createConnection(option);
 	connection.connect();	
-	let query = format('SELECT MAX(TimeStamp) AS TimeStamp FROM Formula WHERE UserInfo_Key = {0}', userId);
+	let query = format('SELECT A.BabyName, A.UserStatus, B.Offset, MAX(C.TimeStamp) AS TimeStamp FROM UserInfo AS A LEFT JOIN TimeZone AS B ON A.UserId = "{0}" AND A.TimeZone_Id = B.TimeZone_Id LEFT JOIN Formula AS C ON A.UserInfo_Key = C.UserInfo_Key AND isDST = {1}', userId, DAY_LIGHT_SAVING);
 	console.log(query);
 	connection.query(query, function(error, results, fields) {
 		connection.end();
 		callback(error, results[0]);
 	});		
 };
+
+

@@ -11,43 +11,47 @@ const message = require('./messageList');
 
 exports.handler = function(event, context, callback){
     const alexa = Alexa.handler(event, context);
-    alexa.appId = 'amzn1.ask.skill.65e04a45-0576-415e-961a-34921aa523e5';        
-    alexa.registerHandlers(Handlers, babyNameHandlers, BirthdayHandlers, ZipCodeHandlers);    
-    alexa.execute();    
+    alexa.appId = 'amzn1.ask.skill.65e04a45-0576-415e-961a-34921aa523e5';
+    alexa.registerHandlers(Handlers, babyNameHandlers, BirthdayHandlers, ZipCodeHandlers);
+    alexa.execute();
 };
+
+function timeConvert(time, offset) {
+    return dateFormat(time.setHours(time.getHours() + offset), 'yyyy-mm-dd hh:MM:ss');
+}
 
 const Handlers = {
     'initIntent' : function () {
         console.log("initIntent fired");
     	const userId = this.event.session.user.userId;
-        var parent = this;
+        const parent = this;
     	dbConn.getUserInfo(userId, function(error, babyInfo) {
             if (error) {
                 console.log("get User Info error.");
-                parent.emit(':tell', message.error.errorMessage);       
+                parent.emit(':tell', message.error.errorMessage);
             } else {
-                parent.attributes['babyName'] = babyInfo.BabyName;                
-                switch (babyInfo.UserStatus) {                        
-                    case globalVal.UserInfoStatus.USERIDMISSING:                        
+                parent.attributes['babyName'] = babyInfo.BabyName;
+                switch (babyInfo.UserStatus) {
+                    case globalVal.UserInfoStatus.USERIDMISSING:
                         console.log("User Id Missing.");
                         parent.emit('insertUserId');
                         break;
-                    case globalVal.UserInfoStatus.BABYNAMEMISSING:                        
+                    case globalVal.UserInfoStatus.BABYNAMEMISSING:
                         parent.handler.state = globalVal.states.BABYNAMEMODE;
                         console.log("Change Baby Name Mode");
                         parent.emitWithState('askBabyNameIntent');
                         break;
-                    case globalVal.UserInfoStatus.BIRTHDAYMISSING:                        
+                    case globalVal.UserInfoStatus.BIRTHDAYMISSING:
                         parent.handler.state = globalVal.states.BIRTHDAYMODE;
                         console.log("Change Birthday Mode");
                         parent.emitWithState('askBirthdayIntent');
                         break;
-                    case globalVal.UserInfoStatus.ZIPCODEMISSING:                        
+                    case globalVal.UserInfoStatus.ZIPCODEMISSING:
                         parent.handler.state = globalVal.states.ZIPCODEMODE;
                         console.log("Change Zipcode Mode");
                         parent.emitWithState('askZipCodeIntent');
                         break;
-                    case globalVal.UserInfoStatus.COMPLETED:                        
+                    case globalVal.UserInfoStatus.COMPLETED:
                         const cardTitle = 'Completed baby register.';
                         const cardContent = 'Thank you for using Baby Traker. You completed to regiter your baby, ' + babyInfo.BabyName + '. \n\n'
                             + 'Member ID: ' + babyInfo.UserInfo_Key + '\n'
@@ -65,10 +69,10 @@ const Handlers = {
     'insertUserId' : function() {
         console.log("insertUserId intent fired.");
         const userId = this.event.session.user.userId;
-        var parent = this;
+        const parent = this;
         dbConn.insertUserId(userId, function (error) {
             if (error) {
-                parent.emit(':tell', message.error.errorMessage);       
+                parent.emit(':tell', message.error.errorMessage);
             } else {
                 parent.handler.state = globalVal.states.BABYNAMEMODE;
                 parent.emitWithState('askBabyNameIntent');
@@ -80,45 +84,54 @@ const Handlers = {
         const name = this.event.request.intent.slots.name.value;
         const amount = parseInt(this.event.request.intent.slots.amount.value);
         const unit = this.event.request.intent.slots.unit.value;
-        let time = dateFormat(new Date(this.event.request.timestamp), 'yyyy-mm-dd hh:MM:ss');        
-        let parent = this;
-        dbConn.getUserInfo(userId, function(error, babyInfo) {            
-            dbConn.addFormula(babyInfo.UserInfo_Key, time, amount, unit, function(error) {
-                if (error) {
-                    parent.emit(':tell', message.error.errorMessage);       
-                } else {
+        const time = dateFormat(new Date(this.event.request.timestamp), 'yyyy-mm-dd hh:MM:ss');        
+        const parent = this;        
+        dbConn.addFormula(userId, time, amount, unit, function(error, result) {
+            if (error) {
+                parent.emit(':tell', message.error.errorMessage);
+            } else {
+                if (result.affectedRows > 0) {
                     const outputString = "Okay, I logged " + name + " ate " + amount + " " + unit + " of formula.";
                     parent.emit(':tell', outputString);
+                }                
+                else {
+                    parent.emit(':tell', 'You need to register first. Please ask Baby tracker to start to tracking.');
                 }
-            });
+            }
         });
     },
     'LastFormula': function () {
         const userId = this.event.session.user.userId;
         const name = this.event.request.intent.slots.name.value;        
-        let currentTime = new Date(this.event.request.timestamp);
-        let parent = this;        
-        dbConn.getUserInfo(userId, function(error, babyInfo) {
-            dbConn.getLastFormula(babyInfo.UserInfo_Key, function(error, formulaInfo) {
-                if (error) {
-                        parent.emit(':tell', message.error.errorMessage);       
-                    } else {                                                                                  
+        const currentTime = new Date(this.event.request.timestamp);
+        const parent = this;                
+        dbConn.getLastFormula(userId, function(error, formulaInfo) {
+            if (error) {
+                parent.emit(':tell', message.error.errorMessage);
+            } else {
+                if (formulaInfo.UserStatus == 0) {
+                    if (formulaInfo.TimeStamp == null) {
+                        parent.emit(':tell', name + ' never ate formula yet.');
+                    } else {
                         const timeDiff = Math.floor((currentTime - new Date(formulaInfo.TimeStamp)) / 1000);
                         const durationDay = Math.floor(timeDiff / (24 * 60 * 60));
                         const durationHour = Math.floor(timeDiff / (60 * 60));
                         const durationMin = Math.floor(timeDiff / 60);
 
-                        let convertedTime = timeConvert(formulaInfo.TimeStamp, babyInfo.Offset);
+                        let convertedTime = timeConvert(formulaInfo.TimeStamp, formulaInfo.Offset);
 
-                        let timeDurationString = '';                        
+                        let timeDurationString = '';
                         if (durationDay > 0) timeDurationString = timeDurationString + durationDay + ' days ';
                         if (durationHour > 0) timeDurationString = timeDurationString + durationHour + ' hours ';
                         timeDurationString = timeDurationString + durationMin + ' minutes ago';
                         const outputString = format("The last time {0} ate formulas was {1}, about {2}.", name, convertedTime, timeDurationString);
                         parent.emit(':tell', outputString);
-                    }
-            });
-        });
+                    }                    
+                } else {
+                    parent.emit(':tell', 'You need to register first. Please ask Baby tracker to start to tracking.');
+                }
+            }
+        });        
     },
     'Unhandled': function() {        
         this.emit(':ask', message.message.errorMessage);
@@ -131,10 +144,6 @@ const Handlers = {
         console.log('session Canceled!');
     }
 };
-
-function timeConvert(time, offset) {
-    return dateFormat(time.setHours(time.getHours() + offset), 'yyyy-mm-dd hh:MM:ss');
-}
 
 const babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE, {
     'askBabyNameIntent' : function() {
@@ -149,7 +158,7 @@ const babyNameHandlers = Alexa.CreateStateHandler(globalVal.states.BABYNAMEMODE,
     'AMAZON.YesIntent' : function() {
         const name = this.attributes['babyName'];
         const userId = this.event.session.user.userId;
-        var parent = this;
+        const parent = this;
         dbConn.insertBabyName(name, userId, function (error) {
             if (error) {
                 parent.emit(':tell', message.error.errorMessage);       
@@ -191,7 +200,7 @@ const BirthdayHandlers = Alexa.CreateStateHandler(globalVal.states.BIRTHDAYMODE,
         const name = this.attributes['babyName'];
         const birthday = this.attributes['birthday'];
         const userId = this.event.session.user.userId;
-        var parent = this;
+        const parent = this;
         dbConn.insertBirthday(birthday, userId, function (error) {
             if (error) {
                 parent.emit(':tell', message.error.errorMessage);       
@@ -234,7 +243,7 @@ const ZipCodeHandlers = Alexa.CreateStateHandler(globalVal.states.ZIPCODEMODE, {
         const zipcode = this.attributes['zipcode'];
         const babyName = this.attributes['babyName'];
         const birthday = this.attributes['birthday'];
-        var parent = this;
+        const parent = this;
         dbConn.insertZipcode(zipcode, userId, function (error, babyInfo) {
             if (error) {
                 parent.emit(':tell', message.error.errorMessage);       
